@@ -114,6 +114,7 @@ header{text-align:center;margin-bottom:28px;}
 .add-ride-btn:hover{border-color:var(--accent);color:var(--accent);}
 .past-day{opacity:0.45;pointer-events:none;}
 .past-lock{font-size:0.7rem;color:var(--muted);margin-top:auto;padding-bottom:2px;}
+.solo-label{font-size:0.6rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 5px;letter-spacing:0.5px;font-weight:600;}
 .empty-day{color:var(--muted);font-size:0.6rem;text-align:center;opacity:0.4;}
 
 /* MODALS */
@@ -330,20 +331,26 @@ function renderAll(){ renderStats(); renderWeek(); }
 // ── STATISTIKEN ───────────────────────────────────────────────────────────
 function getStats(){
   const s={};
-  PERSONS.forEach(p=>{s[p.id]={driven:0,ridden:0};});
+  PERSONS.forEach(p=>{s[p.id]={driven:0,ridden:0,present:0};});
   const todayKey=dateKey(new Date());
   Object.entries(data).forEach(([key,ride])=>{
     if(key>todayKey) return; // Zukünftige Tage ignorieren
     if(ride&&ride.driver&&s[ride.driver]!==undefined){
+      const isSolo=!ride.riders||ride.riders.length===0;
+      if(isSolo) return; // Solo-Fahrten nicht zählen
       s[ride.driver].driven++;
-      (ride.riders||[]).forEach(r=>{ if(s[r]) s[r].ridden++; });
+      s[ride.driver].present++;
+      (ride.riders||[]).forEach(r=>{ if(s[r]){ s[r].ridden++; s[r].present++; } });
     }
   });
   return s;
 }
 function getSuggested(){
-  const s=getStats(); let min=Infinity,sug=null;
-  PERSONS.forEach(p=>{ if(s[p.id].driven<min){min=s[p.id].driven;sug=p.id;} });
+  const s=getStats(); let minQuote=Infinity,sug=null;
+  PERSONS.forEach(p=>{
+    const quote=s[p.id].present===0 ? 0 : s[p.id].driven/s[p.id].present;
+    if(quote<minQuote){minQuote=quote;sug=p.id;}
+  });
   return sug;
 }
 function renderStats(){
@@ -360,9 +367,10 @@ function renderStats(){
       </div>
       <div class="stat-numbers">
         <div><div class="stat-value" style="color:${p.color}">${s[p.id].driven}</div><div class="stat-key">Gefahren</div></div>
-        <div><div class="stat-value">${s[p.id].ridden}</div><div class="stat-key">Mitfahr.</div></div>
+        <div><div class="stat-value">${s[p.id].present}</div><div class="stat-key">Dabei</div></div>
       </div>
       <div class="bar-wrap"><div class="bar-fill" style="width:${(s[p.id].driven/maxD)*100}%;background:${p.color}"></div></div>
+      <div style="font-size:0.65rem;color:var(--muted);">Quote: ${s[p.id].present===0?'–':Math.round(s[p.id].driven/s[p.id].present*100)+'%'}</div>
     </div>`).join('');
 }
 
@@ -394,8 +402,11 @@ function renderWeek(){
     if(ride&&ride.driver){
       const dp=PERSONS.find(p=>p.id===ride.driver);
       if(dp){
-        inner+=`<div class="driver-badge" style="background:${dp.bg};color:${dp.color};border:2px solid ${dp.color}">${dp.id}</div>`;
-        if(ride.riders&&ride.riders.length){
+        const isSolo=!ride.riders||ride.riders.length===0;
+        inner+=`<div class="driver-badge" style="background:${dp.bg};color:${dp.color};border:2px solid ${dp.color};${isSolo?'opacity:0.5':''}">${dp.id}</div>`;
+        if(isSolo){
+          inner+=`<div class="solo-label">Solo</div>`;
+        } else if(ride.riders&&ride.riders.length){
           inner+='<div class="rider-dots">';
           ride.riders.forEach(r=>{const rp=PERSONS.find(p=>p.id===r);if(rp)inner+=`<div class="rider-dot" style="background:${rp.color}"></div>`;});
           inner+='</div>';

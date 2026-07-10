@@ -403,6 +403,7 @@ function renderWeek(){
   document.getElementById('daysGrid').innerHTML=days.map((d,i)=>{
     const key=dateKey(d),ride=data[key],tc=isToday(d)?'today':'';
     const isPast=key<todayKey;
+    const isLocked=isPast&&!adminMode; // Nur sperren wenn NICHT im Admin-Modus
     let inner='';
     if(ride&&ride.driver){
       const dp=PERSONS.find(p=>p.id===ride.driver);
@@ -416,14 +417,14 @@ function renderWeek(){
           ride.riders.forEach(r=>{const rp=PERSONS.find(p=>p.id===r);if(rp)inner+=`<div class="rider-dot" style="background:${rp.color}"></div>`;});
           inner+='</div>';
         }
-        if(isPast){inner+=`<div class="past-lock">🔒</div>`;}
+        if(isLocked){inner+=`<div class="past-lock">🔒</div>`;}
         else{inner+=`<button class="add-ride-btn" onclick="openModal('${key}',event)">✏️</button>`;}
       }
     } else {
-      if(isPast){inner=`<div class="empty-day">–</div><div class="past-lock">🔒</div>`;}
+      if(isLocked){inner=`<div class="empty-day">–</div><div class="past-lock">🔒</div>`;}
       else{inner=`<div class="empty-day">–</div><button class="add-ride-btn" onclick="openModal('${key}',event)">+ Fahrt</button>`;}
     }
-    return `<div class="day-col"><div class="day-name">${DN[i]}</div><div class="day-box ${tc} ${isPast?'past-day':''}"><div class="day-date">${d.getDate()}.${d.getMonth()+1}</div>${inner}</div></div>`;
+    return `<div class="day-col"><div class="day-name">${DN[i]}</div><div class="day-box ${tc} ${isLocked?'past-day':''}"><div class="day-date">${d.getDate()}.${d.getMonth()+1}</div>${inner}</div></div>`;
   }).join('');
 }
 function changeWeek(dir){currentWeekOffset=dir===0?0:currentWeekOffset+dir;renderWeek();}

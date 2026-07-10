@@ -276,6 +276,10 @@ let PERSONS = [];
 let data = {}, currentWeekOffset = 0, modalDay = null, selectedDriver = null;
 let configDraft = null;
 
+// ✨ Admin-Modus aus URL-Parameter (?admin)
+const urlParams = new URLSearchParams(window.location.search);
+const adminMode = urlParams.has('admin');
+
 // ── FIREBASE ──────────────────────────────────────────────────────────────
 function setSyncStatus(state) {
   const dot=document.getElementById('syncDot'), txt=document.getElementById('syncText');
@@ -323,8 +327,9 @@ function buildPersons(){
       bg:PALETTE[i].bg
     });
   }
+  const adminLabel = adminMode ? ' · 🔓 Admin-Modus (Sperre aufgehoben)' : '';
   document.getElementById('mainSubtitle').textContent=
-    `${config.count} Person${config.count>1?'en':''} · max. 3 Fahrtage/Woche · Echtzeit-Sync`;
+    `${config.count} Person${config.count>1?'en':''} · max. 3 Fahrtage/Woche · Echtzeit-Sync${adminLabel}`;
 }
 function renderAll(){ renderStats(); renderWeek(); }
 
@@ -426,7 +431,7 @@ function changeWeek(dir){currentWeekOffset=dir===0?0:currentWeekOffset+dir;rende
 // ── FAHRT MODAL ───────────────────────────────────────────────────────────
 function openModal(dayKey,e){
   if(e)e.stopPropagation();
-  if(dayKey<dateKey(new Date())) return; // Vergangene Tage gesperrt
+  if(dayKey<dateKey(new Date()) && !adminMode) return; // Sperre nur ohne Admin-Modus
   modalDay=dayKey;selectedDriver=null;
   const d=new Date(dayKey),existing=data[dayKey],sug=getSuggested();
   const DF=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];

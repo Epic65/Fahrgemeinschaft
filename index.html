@@ -74,9 +74,6 @@ body::after{content:'';position:fixed;bottom:-150px;right:-100px;width:500px;hei
 .config-btn:hover{border-color:var(--accent);color:var(--accent);}
 .config-btn svg{width:14px;height:14px;flex-shrink:0;}
 
-.top-bar-right{display:flex;align-items:center;gap:12px;}
-.admin-badge{display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--amber);padding:8px 14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:30px;white-space:nowrap;}
-
 header{text-align:center;margin-bottom:28px;}
 .title{font-family:'DM Serif Display',serif;font-size:2.4rem;letter-spacing:-0.5px;background:linear-gradient(135deg,#e8eaf6 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .subtitle{color:var(--muted);font-size:0.9rem;margin-top:6px;font-weight:300;}
@@ -179,16 +176,13 @@ header{text-align:center;margin-bottom:28px;}
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncText">Verbinde…</span>
     </div>
-    <div class="top-bar-right">
-      <div class="admin-badge" id="adminBadge" style="display:none">🔓 Admin-Modus (Sperre aufgehoben)</div>
-      <button class="config-btn" onclick="openConfig()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-        Konfiguration
-      </button>
-    </div>
+    <button class="config-btn" onclick="openConfig()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Konfiguration
+    </button>
   </div>
 
   <header>
@@ -282,10 +276,6 @@ let PERSONS = [];
 let data = {}, currentWeekOffset = 0, modalDay = null, selectedDriver = null;
 let configDraft = null;
 
-// ✨ Admin-Modus aus URL-Parameter (?admin)
-const urlParams = new URLSearchParams(window.location.search);
-const adminMode = urlParams.has('admin');
-
 // ── FIREBASE ──────────────────────────────────────────────────────────────
 function setSyncStatus(state) {
   const dot=document.getElementById('syncDot'), txt=document.getElementById('syncText');
@@ -335,14 +325,13 @@ function buildPersons(){
   }
   document.getElementById('mainSubtitle').textContent=
     `${config.count} Person${config.count>1?'en':''} · max. 3 Fahrtage/Woche · Echtzeit-Sync`;
-  document.getElementById('adminBadge').style.display = adminMode ? 'flex' : 'none';
 }
 function renderAll(){ renderStats(); renderWeek(); }
 
 // ── STATISTIKEN ───────────────────────────────────────────────────────────
 function getStats(){
   const s={};
-  PERSONS.forEach(p=>{s[p.id]={driven:0,ridden:0,present:0};});
+  PERSONS.forEach(p=>{s[p.id]={driven:0,ridden:0};});
   const todayKey=dateKey(new Date());
   Object.entries(data).forEach(([key,ride])=>{
     if(key>todayKey) return; // Zukünftige Tage ignorieren
@@ -350,8 +339,7 @@ function getStats(){
       const isSolo=!ride.riders||ride.riders.length===0;
       if(isSolo) return; // Solo-Fahrten nicht zählen
       s[ride.driver].driven++;
-      s[ride.driver].present++;
-      (ride.riders||[]).forEach(r=>{ if(s[r]){ s[r].ridden++; s[r].present++; } });
+      (ride.riders||[]).forEach(r=>{ if(s[r]) s[r].ridden++; });
     }
   });
   return s;
@@ -359,7 +347,8 @@ function getStats(){
 function getSuggested(){
   const s=getStats(); let minQuote=Infinity,sug=null;
   PERSONS.forEach(p=>{
-    const quote=s[p.id].present===0 ? 0 : s[p.id].driven/s[p.id].present;
+    const total=s[p.id].driven+s[p.id].ridden;
+    const quote=total===0 ? 0 : s[p.id].driven/total;
     if(quote<minQuote){minQuote=quote;sug=p.id;}
   });
   return sug;
@@ -378,10 +367,10 @@ function renderStats(){
       </div>
       <div class="stat-numbers">
         <div><div class="stat-value" style="color:${p.color}">${s[p.id].driven}</div><div class="stat-key">Gefahren</div></div>
-        <div><div class="stat-value">${s[p.id].present}</div><div class="stat-key">Dabei</div></div>
+        <div><div class="stat-value">${s[p.id].ridden}</div><div class="stat-key">Mitgefahren</div></div>
       </div>
       <div class="bar-wrap"><div class="bar-fill" style="width:${(s[p.id].driven/maxD)*100}%;background:${p.color}"></div></div>
-      <div style="font-size:0.65rem;color:var(--muted);">Quote: ${s[p.id].present===0?'–':Math.round(s[p.id].driven/s[p.id].present*100)+'%'}</div>
+      <div style="font-size:0.65rem;color:var(--muted);">${(()=>{const t=s[p.id].driven+s[p.id].ridden;return t===0?'Quote: –':'Quote: '+Math.round(s[p.id].driven/t*100)+'%';})()} </div>
     </div>`).join('');
 }
 
@@ -409,7 +398,6 @@ function renderWeek(){
   document.getElementById('daysGrid').innerHTML=days.map((d,i)=>{
     const key=dateKey(d),ride=data[key],tc=isToday(d)?'today':'';
     const isPast=key<todayKey;
-    const isLocked=isPast&&!adminMode; // Nur sperren wenn NICHT im Admin-Modus
     let inner='';
     if(ride&&ride.driver){
       const dp=PERSONS.find(p=>p.id===ride.driver);
@@ -423,14 +411,14 @@ function renderWeek(){
           ride.riders.forEach(r=>{const rp=PERSONS.find(p=>p.id===r);if(rp)inner+=`<div class="rider-dot" style="background:${rp.color}"></div>`;});
           inner+='</div>';
         }
-        if(isLocked){inner+=`<div class="past-lock">🔒</div>`;}
+        if(isPast){inner+=`<div class="past-lock">🔒</div>`;}
         else{inner+=`<button class="add-ride-btn" onclick="openModal('${key}',event)">✏️</button>`;}
       }
     } else {
-      if(isLocked){inner=`<div class="empty-day">–</div><div class="past-lock">🔒</div>`;}
+      if(isPast){inner=`<div class="empty-day">–</div><div class="past-lock">🔒</div>`;}
       else{inner=`<div class="empty-day">–</div><button class="add-ride-btn" onclick="openModal('${key}',event)">+ Fahrt</button>`;}
     }
-    return `<div class="day-col"><div class="day-name">${DN[i]}</div><div class="day-box ${tc} ${isLocked?'past-day':''}"><div class="day-date">${d.getDate()}.${d.getMonth()+1}</div>${inner}</div></div>`;
+    return `<div class="day-col"><div class="day-name">${DN[i]}</div><div class="day-box ${tc} ${isPast?'past-day':''}"><div class="day-date">${d.getDate()}.${d.getMonth()+1}</div>${inner}</div></div>`;
   }).join('');
 }
 function changeWeek(dir){currentWeekOffset=dir===0?0:currentWeekOffset+dir;renderWeek();}
@@ -438,7 +426,7 @@ function changeWeek(dir){currentWeekOffset=dir===0?0:currentWeekOffset+dir;rende
 // ── FAHRT MODAL ───────────────────────────────────────────────────────────
 function openModal(dayKey,e){
   if(e)e.stopPropagation();
-  if(dayKey<dateKey(new Date()) && !adminMode) return; // Sperre nur ohne Admin-Modus
+  if(dayKey<dateKey(new Date())) return; // Vergangene Tage gesperrt
   modalDay=dayKey;selectedDriver=null;
   const d=new Date(dayKey),existing=data[dayKey],sug=getSuggested();
   const DF=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];

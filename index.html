@@ -74,6 +74,10 @@ body::after{content:'';position:fixed;bottom:-150px;right:-100px;width:500px;hei
 .config-btn:hover{border-color:var(--accent);color:var(--accent);}
 .config-btn svg{width:14px;height:14px;flex-shrink:0;}
 
+/* ADMIN BANNER */
+.admin-banner{display:none;align-items:center;gap:8px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:10px;padding:8px 14px;margin-bottom:14px;font-size:0.78rem;color:var(--amber);font-weight:500;}
+.admin-banner.visible{display:flex;}
+
 header{text-align:center;margin-bottom:28px;}
 .title{font-family:'DM Serif Display',serif;font-size:2.4rem;letter-spacing:-0.5px;background:linear-gradient(135deg,#e8eaf6 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .subtitle{color:var(--muted);font-size:0.9rem;margin-top:6px;font-weight:300;}
@@ -112,7 +116,8 @@ header{text-align:center;margin-bottom:28px;}
 .rider-dot{width:20px;height:5px;border-radius:3px;opacity:0.6;}
 .add-ride-btn{background:transparent;border:1px dashed var(--border);color:var(--muted);border-radius:8px;padding:3px 6px;font-size:0.65rem;cursor:pointer;width:100%;transition:border-color 0.2s,color 0.2s;font-family:'DM Sans',sans-serif;}
 .add-ride-btn:hover{border-color:var(--accent);color:var(--accent);}
-.past-day{opacity:0.45;pointer-events:none;}
+.past-day{opacity:0.45;}
+.past-day-admin{opacity:0.75;}
 .past-lock{font-size:0.7rem;color:var(--muted);margin-top:auto;padding-bottom:2px;}
 .solo-label{font-size:0.6rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1px 5px;letter-spacing:0.5px;font-weight:600;}
 .empty-day{color:var(--muted);font-size:0.6rem;text-align:center;opacity:0.4;}
@@ -183,6 +188,11 @@ header{text-align:center;margin-bottom:28px;}
       </svg>
       Konfiguration
     </button>
+  </div>
+
+  <!-- ADMIN BANNER -->
+  <div class="admin-banner" id="adminBanner">
+    🔓 Admin-Modus aktiv — vergangene Tage sind entsperrt und bearbeitbar
   </div>
 
   <header>
@@ -276,6 +286,17 @@ let PERSONS = [];
 let data = {}, currentWeekOffset = 0, modalDay = null, selectedDriver = null;
 let configDraft = null;
 
+// ✨ Admin-Modus aus URL-Parameter (?admin)
+const urlParams = new URLSearchParams(window.location.search);
+const adminMode = urlParams.has('admin');
+
+// Admin-Banner anzeigen falls aktiv
+if (adminMode) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('adminBanner').classList.add('visible');
+  });
+}
+
 // ── FIREBASE ──────────────────────────────────────────────────────────────
 function setSyncStatus(state) {
   const dot=document.getElementById('syncDot'), txt=document.getElementById('syncText');
@@ -323,8 +344,9 @@ function buildPersons(){
       bg:PALETTE[i].bg
     });
   }
+  const adminLabel = adminMode ? ' · 🔓 Admin-Modus' : '';
   document.getElementById('mainSubtitle').textContent=
-    `${config.count} Person${config.count>1?'en':''} · max. 3 Fahrtage/Woche · Echtzeit-Sync`;
+    `${config.count} Person${config.count>1?'en':''} · max. 3 Fahrtage/Woche · Echtzeit-Sync${adminLabel}`;
 }
 function renderAll(){ renderStats(); renderWeek(); }
 
@@ -398,6 +420,8 @@ function renderWeek(){
   document.getElementById('daysGrid').innerHTML=days.map((d,i)=>{
     const key=dateKey(d),ride=data[key],tc=isToday(d)?'today':'';
     const isPast=key<todayKey;
+    // Im Admin-Modus: vergangene Tage leicht gedimmt, aber NICHT pointer-events:none
+    const dayClass = isPast ? (adminMode ? 'past-day-admin' : 'past-day') : '';
     let inner='';
     if(ride&&ride.driver){
       const dp=PERSONS.find(p=>p.id===ride.driver);
@@ -411,14 +435,20 @@ function renderWeek(){
           ride.riders.forEach(r=>{const rp=PERSONS.find(p=>p.id===r);if(rp)inner+=`<div class="rider-dot" style="background:${rp.color}"></div>`;});
           inner+='</div>';
         }
-        if(isPast){inner+=`<div class="past-lock">🔒</div>`;}
-        else{inner+=`<button class="add-ride-btn" onclick="openModal('${key}',event)">✏️</button>`;}
+        if(isPast && !adminMode){
+          inner+=`<div class="past-lock">🔒</div>`;
+        } else {
+          inner+=`<button class="add-ride-btn" onclick="openModal('${key}',event)">✏️</button>`;
+        }
       }
     } else {
-      if(isPast){inner=`<div class="empty-day">–</div><div class="past-lock">🔒</div>`;}
-      else{inner=`<div class="empty-day">–</div><button class="add-ride-btn" onclick="openModal('${key}',event)">+ Fahrt</button>`;}
+      if(isPast && !adminMode){
+        inner=`<div class="empty-day">–</div><div class="past-lock">🔒</div>`;
+      } else {
+        inner=`<div class="empty-day">–</div><button class="add-ride-btn" onclick="openModal('${key}',event)">+ Fahrt</button>`;
+      }
     }
-    return `<div class="day-col"><div class="day-name">${DN[i]}</div><div class="day-box ${tc} ${isPast?'past-day':''}"><div class="day-date">${d.getDate()}.${d.getMonth()+1}</div>${inner}</div></div>`;
+    return `<div class="day-col"><div class="day-name">${DN[i]}</div><div class="day-box ${tc} ${dayClass}"><div class="day-date">${d.getDate()}.${d.getMonth()+1}</div>${inner}</div></div>`;
   }).join('');
 }
 function changeWeek(dir){currentWeekOffset=dir===0?0:currentWeekOffset+dir;renderWeek();}
@@ -426,7 +456,8 @@ function changeWeek(dir){currentWeekOffset=dir===0?0:currentWeekOffset+dir;rende
 // ── FAHRT MODAL ───────────────────────────────────────────────────────────
 function openModal(dayKey,e){
   if(e)e.stopPropagation();
-  if(dayKey<dateKey(new Date())) return; // Vergangene Tage gesperrt
+  // Vergangene Tage nur im Admin-Modus öffnen
+  if(dayKey<dateKey(new Date()) && !adminMode) return;
   modalDay=dayKey;selectedDriver=null;
   const d=new Date(dayKey),existing=data[dayKey],sug=getSuggested();
   const DF=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
